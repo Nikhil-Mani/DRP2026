@@ -1,6 +1,6 @@
 import numpy as np
 import adaptivestepsize
-from scipy.stats import multivariate_normal as mvn
+from scipy.stats import multivariate_normal
 
 def gradient(target, x):
     return 17
@@ -15,18 +15,21 @@ def MALA(target, x0, l0, total_steps, dimension):
         xp = x + step * gradient(target, x) + np.sqrt(2 * step) * Z
 
         covariance = 2 * step * np.eye(dimension, dtype=np.float64)
-        numerator = target(xp) * mvn.pdf(
+        numerator = target(xp) * multivariate_normal.pdf(
                                     x,
                                     mean=xp + step * gradient(target, xp), 
                                     cov=covariance # pyright: ignore[reportArgumentType]
         )
-        denominator = target(x) * mvn.pdf(
+        denominator = target(x) * multivariate_normal.pdf(
                                         xp,
                                         mean = x + step * gradient(target, x),
                                         cov=covariance # pyright: ignore[reportArgumentType]
         )
-        p_accept = np.min(1, numerator / denominator)
+        p_accept = min(1, numerator / denominator)
         if (np.random.uniform() <= p_accept):
+            acceptances.append(1)
             x = xp
+        else:
+            acceptances.append(0)
     return x
 
