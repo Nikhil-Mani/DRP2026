@@ -28,13 +28,32 @@ class Target:
     def gradient(self, x):
         return jax.grad(self.dist.log_prob)(x)
 
+    def sample_from_hessian(self, key, mu, num, shape=() ) -> jax.Array:
+        if num == 1:
+            d = self.dist1
+        else:
+            d = self.dist2
+        hess_fn = jax.hessian(d.log_prob)
+        H = hess_fn(mu)
+
+        covariance_matrix = jnp.linalg.inv(-H)
+
+        samples = jax.random.multivariate_normal(
+            key=key,
+            mean=mu,
+            cov=covariance_matrix,
+            shape=shape
+        )
+
+        return samples
+
     def check_separation(self, threshold):
         # Since we have isotropic case for now, we can just project the distribution onto
         # mean seperation vector
         v = jnp.asarray(self.dist1.mean()) - jnp.asarray(self.dist2.mean())
         # v = jnp.linalg.vector_norm(v)
         u = v / jnp.linalg.vector_norm(v)
-        
+
         m1 = u @ self.dist1.mean()
         m2 = u @ self.dist2.mean()
         proj_d1 = distrax.Normal(m1, jnp.sqrt(u @ self.dist1.covariance() @ u))
@@ -48,7 +67,7 @@ class Target:
             method="bounded"
         )
 
-        peak_log_prob = max(self.dist.log_prob(-self.a * jnp.array([1] * self.d)), 
+        peak_log_prob = max(self.dist.log_prob(-self.a * jnp.array([1] * self.d)),
                             self.dist.log_prob(self.a * jnp.array([1] * self.d)))
 
         accept_ratio = jnp.exp(valley.fun - peak_log_prob)
