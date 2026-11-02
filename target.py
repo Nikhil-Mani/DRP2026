@@ -66,9 +66,8 @@ class Target:
                     max(float(m1), float(m2))),
             method="bounded"
         )
-
-        peak_log_prob = max(self.dist.log_prob(-self.a * jnp.array([1] * self.d)),
-                            self.dist.log_prob(self.a * jnp.array([1] * self.d)))
+        #
+        peak_log_prob = max(projected.log_prob(m1), projected.log_prob(m2))
 
         accept_ratio = jnp.exp(valley.fun - peak_log_prob)
         if (accept_ratio >= threshold):

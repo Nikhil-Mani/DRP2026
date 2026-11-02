@@ -5,4 +5,4 @@ class Thresholds:
     # seperation threshold
     xi: float
 
-thresholds = Thresholds(0.5)
+thresholds = Thresholds(0.3)
