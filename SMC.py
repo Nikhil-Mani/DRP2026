@@ -1,7 +1,8 @@
 import numpy as np
 from target import Target
 import scipy
-import MALA 
+import MALA
+from constants import *
 
 def update_distribution(target: Target, init_distribution, beta):
     return lambda x: (
@@ -18,7 +19,8 @@ def compute_delta():
 #   init_distribution - initial distribution to sample from
 #   ESS_min - minimum effective sample size
 #   max_steps - maximum allowed iterations
-def SMC(target: Target, num_particles, init_distribution, ESS_min, max_steps, dimension):
+def SMC(target: Target, num_particles, init_distribution, ESS_min, max_steps, params: MALAParams):
+    dimension = target.d
     beta = 0
     steps = 0
     weights = (1 / num_particles) * np.ones(num_particles)
@@ -28,10 +30,10 @@ def SMC(target: Target, num_particles, init_distribution, ESS_min, max_steps, di
         particles[i] = init_distribution.sample()
 
     while (beta < 1 and steps < max_steps):
-        delta = compute_delta()       
-        beta += delta 
-        next_distribution = update_distribution(target, init_distribution, beta) 
-        
+        delta = compute_delta()
+        beta += delta
+        next_distribution = update_distribution(target, init_distribution, beta)
+
         for i in range(num_particles):
             weights[i] = next_distribution(particles[i]) / distribution(particles[i])
         weights = weights / np.sum(weights)
