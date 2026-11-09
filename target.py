@@ -80,3 +80,38 @@ class Target:
         # ovl = self.dist1.cdf(c) + (1 - self.dist2.cdf(c))
         # if(ovl < xi):
         #     raise ValueError("Separation is not enough")
+
+
+# TODO: review this code from Gemini
+class TemperedTarget:
+    """A wrapper that provides a .dist.log_prob interface returning a pure scalar for JAX autodiff."""
+    def __init__(self, target, init_distribution, beta):
+        self.target_obj = target
+        self.init_dist = init_distribution
+        self.beta = beta
+        self.d = target.d
+        
+        class TemperedDist:
+            def __init__(self, parent):
+                self.parent = parent
+            
+            def log_prob(self, x):
+                mean = self.parent.init_dist.mean
+                std = self.parent.init_dist.std
+                variance = std ** 2
+                
+                # jnp.sum ensures scalar output shape () even if x has shape (1,)
+                log_p0 = jnp.sum(-0.5 * jnp.log(2 * jnp.pi * variance) - jnp.square(x - mean) / (2 * variance))
+                log_target = jnp.sum(self.parent.target_obj.dist.log_prob(x))
+                
+                return (1.0 - self.parent.beta) * log_p0 + self.parent.beta * log_target
+
+        self.dist = TemperedDist(self)
+
+    def target(self, x):
+        particle_input = jnp.atleast_1d(x)
+        t_val = float(self.target_obj.target(particle_input))
+        p_val = float(self.init_dist.prob(x))
+        t_val = max(t_val, 1e-300)
+        p_val = max(p_val, 1e-300)
+        return (p_val ** (1.0 - self.beta)) * (t_val ** self.beta)

@@ -2,9 +2,9 @@ import numpy as np
 import jax
 import adaptivestepsize
 from scipy.stats import multivariate_normal
-from target import Target
+from target import TemperedTarget
 
-def MALA(target: Target, x0, l0, total_steps, dimension, ret_accs=False, ret_his=False,
+def MALA(target: TemperedTarget, x0, l0, total_steps, dimension, ret_accs=False, ret_his=False,
          *, adapt=True, return_step=False):
     x = np.asarray(x0, dtype=float)
     if x.shape != (dimension,):
