@@ -1,0 +1,5 @@
+.venv/
+__pycache__/
+*.pyc
+example_results/
+quick_results/
